@@ -3,7 +3,6 @@ pragma solidity ^0.8.20;
 
 import {FunctionsClient} from "lib/chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import {FunctionsRequest} from "lib/chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
-import {IRouterClient} from "lib/chainlink/contracts/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {IERC20} from "lib/forge-std/src/interfaces/IERC20.sol";
 
 import {OwnerIsCreator} from "lib/chainlink/contracts/src/v0.8/shared/access/OwnerIsCreator.sol";
@@ -16,11 +15,11 @@ contract Weather is FunctionsClient, OwnerIsCreator {
     //////////////////////////////////////////////////////////////*/
 
     // FUNCTIONS
-    IERC20 linkToken; // sepolia  0x779877a7b0d9e8603169ddbd7836e478b4624789
-    IRouterClient router; // seoplia 0xb83E47C2bC239B3bf370bc41e1459A34b41238D0
-    bytes32 donId; // sepolia 0x66756e2d657468657265756d2d7365706f6c69612d3100000000000000000000
-    uint64 subscriptionId; // sepolia 3659
-    uint32 callbackGasLimit = 300_000;
+    IERC20 linkToken;
+    address router;
+    bytes32 donId;
+    uint64 subscriptionId;
+    uint32 callbackGasLimit;
 
     string public lastCity;
     bytes32 public lastRequestId;
@@ -43,6 +42,9 @@ contract Weather is FunctionsClient, OwnerIsCreator {
     // AUTOMATION
     address public forwarderAddress;
 
+    address public addressWhoCalledThis_msgSender;
+    address public addressWhoCalledThis_txOrigin;
+
     constructor(
         address linkTokenAddress,
         address _router,
@@ -50,21 +52,19 @@ contract Weather is FunctionsClient, OwnerIsCreator {
         bytes32 _donId,
         uint32 _callbackGasLimit
     ) FunctionsClient(_router) {
-        linkToken = IERC20(linkTokenAddress);
-        router = IRouterClient(_router);
+        // linkToken = IERC20(linkTokenAddress);
+        router = _router;
         subscriptionId = _subscriptionId;
         donId = _donId;
         callbackGasLimit = _callbackGasLimit;
-        linkToken.approve(address(router), type(uint256).max);
+        // linkToken.approve(address(router), type(uint256).max);
     }
 
     /*//////////////////////////////////////////////////////////////
                           CHAINLINK FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function requestWeather(
-        string memory _city
-    ) external onlyForwarder returns (bytes32 requestId) {
+    function requestWeather(string memory _city) external returns (bytes32) {
         string[] memory args = new string[](1);
         args[0] = _city;
 
@@ -72,14 +72,18 @@ contract Weather is FunctionsClient, OwnerIsCreator {
         req.initializeRequestForInlineJavaScript(source);
         if (args.length > 0) req.setArgs(args);
 
-        lastCity = _city;
-
-        requestId = _sendRequest(
+        lastRequestId = _sendRequest(
             req.encodeCBOR(),
             subscriptionId,
             callbackGasLimit,
             donId
         );
+
+        lastCity = _city;
+        addressWhoCalledThis_msgSender = msg.sender;
+        addressWhoCalledThis_txOrigin = tx.origin;
+
+        return lastRequestId;
     }
 
     function fulfillRequest(
@@ -91,7 +95,6 @@ contract Weather is FunctionsClient, OwnerIsCreator {
             revert("non matching requestIds"); // Check if request IDs match
         }
         lastError = err;
-
         // Update the contract's state variables with the response and any errors
         lastResponse = response;
         lastTemperature = string(response);

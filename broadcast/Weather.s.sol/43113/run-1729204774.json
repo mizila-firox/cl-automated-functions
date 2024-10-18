@@ -1,0 +1,32 @@
+{
+  "transactions": [
+    {
+      "hash": null,
+      "transactionType": "CALL",
+      "contractName": null,
+      "contractAddress": "0x50E5880d26FF7D842cbd341efB9C33104937DDFB",
+      "function": "requestWeather(string)",
+      "arguments": [
+        "new-york"
+      ],
+      "transaction": {
+        "from": "0x7E8d7BFd6cc6B05d056f2E46860D95038f2E3234",
+        "to": "0x50E5880d26FF7D842cbd341efB9C33104937DDFB",
+        "gas": "0x66934",
+        "value": "0x0",
+        "input": "0x1829ca52000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000086e65772d796f726b000000000000000000000000000000000000000000000000",
+        "nonce": "0x280",
+        "chainId": "0xa869"
+      },
+      "additionalContracts": [],
+      "isFixedGasLimit": false
+    }
+  ],
+  "receipts": [],
+  "libraries": [],
+  "pending": [],
+  "returns": {},
+  "timestamp": 1729204774,
+  "chain": 43113,
+  "commit": "791858f"
+}
